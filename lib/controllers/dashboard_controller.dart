@@ -1,19 +1,19 @@
-import 'dart:async';
 import 'package:get/get.dart';
 import 'package:uno_assignment/models/location_data.dart';
+import 'package:uno_assignment/services/background_location_service.dart';
 import 'package:uno_assignment/services/location_service.dart';
 import 'package:uno_assignment/services/notification_service.dart';
 import 'package:uno_assignment/services/storage_service.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class DashboardController extends GetxController {
-  final LocationService _locationService = LocationService();
-  final NotificationService _notificationService = NotificationService();
-  final StorageService _storageService = StorageService();
+  final LocationService _locationService = Get.put(LocationService());
+  final NotificationService _notificationService = Get.put(NotificationService());
+  final StorageService _storageService = Get.put(StorageService());
+  final BackgroundLocationService _backgroundLocationService = Get.put(BackgroundLocationService());
 
   var isTracking = false.obs;
   var locations = <LocationData>[].obs;
-
-  Timer? _timer;
 
   @override
   void onInit() {
@@ -21,39 +21,27 @@ class DashboardController extends GetxController {
     _notificationService.init();
     _storageService.init().then((_) {
       locations.value = _storageService.getAllLocations();
+      Hive.box<LocationData>('locations').listenable().addListener(() {
+        locations.value = _storageService.getAllLocations();
+      });
     });
   }
 
   void startTracking() async {
     isTracking.value = true;
-    _fetchAndSaveLocation(isInitial: true);
-    _timer = Timer.periodic(Duration(minutes: 5), (timer) {
-      _fetchAndSaveLocation();
-    });
+    _backgroundLocationService.start();
   }
 
   void stopTracking() {
     isTracking.value = false;
-    _timer?.cancel();
+    _backgroundLocationService.stop();
     _storageService.clearAllLocations();
     locations.clear();
   }
 
-  void _fetchAndSaveLocation({bool isInitial = false}) async {
-    try {
-      LocationData locationData = await _locationService.getCurrentLocation();
-      _storageService.saveLocation(locationData);
-      locations.add(locationData);
-      final title = isInitial ? 'Tracking Started' : 'Location Updated';
-      _notificationService.showNotification(locationData, title);
-    } catch (e) {
-      Get.snackbar("Error", e.toString());
-    }
-  }
-
   @override
   void onClose() {
-    _timer?.cancel();
+    _backgroundLocationService.stop();
     super.onClose();
   }
 }
