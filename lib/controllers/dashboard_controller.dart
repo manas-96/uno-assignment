@@ -27,7 +27,7 @@ class DashboardController extends GetxController {
   void startTracking() async {
     isTracking.value = true;
     _fetchAndSaveLocation(isInitial: true);
-    _timer = Timer.periodic(Duration(minutes: 5), (timer) {
+    _timer = Timer.periodic(Duration(seconds: 5), (timer) {
       _fetchAndSaveLocation();
     });
   }

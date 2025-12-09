@@ -3,45 +3,61 @@ import 'package:uno_assignment/models/location_data.dart';
 
 class NotificationService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    final DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings();
+    const DarwinInitializationSettings initializationSettingsIOS =
+    DarwinInitializationSettings();
 
-    final InitializationSettings initializationSettings = InitializationSettings(
+    const InitializationSettings initializationSettings =
+    InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
     );
 
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+    final androidPlugin =
+    flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+
+    if (androidPlugin != null) {
+      await androidPlugin.requestNotificationsPermission();
+    }
   }
 
-  Future<void> showNotification(LocationData locationData, String title) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-    AndroidNotificationDetails(
-      'location_tracking',
-      'Location Tracking',
-      channelDescription: 'Channel for location tracking notifications',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: true,
-    );
 
-    const NotificationDetails platformChannelSpecifics =
-    NotificationDetails(android: androidPlatformChannelSpecifics);
 
-    await flutterLocalNotificationsPlugin.show(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000, // ✅ UNIQUE ID
-      title,
-      'Lat: ${locationData.latitude}, '
-          'Lng: ${locationData.longitude}\n'
-          'Address: ${locationData.address}',
-      platformChannelSpecifics,
-    );
+  Future<void> showNotification(
+      LocationData locationData, String title) async {
+    try{
+      const AndroidNotificationDetails androidDetails =
+      AndroidNotificationDetails(
+        'location_tracking',
+        'Location Tracking',
+        channelDescription: 'Channel for location tracking notifications',
+        importance: Importance.max,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+      );
+
+      const NotificationDetails notificationDetails =
+      NotificationDetails(android: androidDetails);
+
+      await flutterLocalNotificationsPlugin.show(
+        DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        title,
+        'Lat: ${locationData.latitude}, '
+            'Lng: ${locationData.longitude}\n'
+            'Address: ${locationData.address}',
+        notificationDetails,
+      );
+    }catch(e){
+      print(e.toString());
+    }
   }
-
 }
