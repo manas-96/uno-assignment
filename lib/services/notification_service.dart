@@ -22,23 +22,26 @@ class NotificationService {
 
   Future<void> showNotification(LocationData locationData, String title) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
+    AndroidNotificationDetails(
       'location_tracking',
       'Location Tracking',
       channelDescription: 'Channel for location tracking notifications',
       importance: Importance.max,
       priority: Priority.high,
-      showWhen: false,
+      showWhen: true,
     );
 
     const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
+    NotificationDetails(android: androidPlatformChannelSpecifics);
 
     await flutterLocalNotificationsPlugin.show(
-      0,
+      DateTime.now().millisecondsSinceEpoch ~/ 1000, // ✅ UNIQUE ID
       title,
-      'Lat: ${locationData.latitude}, Lng: ${locationData.longitude}\nAddress: ${locationData.address}',
+      'Lat: ${locationData.latitude}, '
+          'Lng: ${locationData.longitude}\n'
+          'Address: ${locationData.address}',
       platformChannelSpecifics,
     );
   }
+
 }
